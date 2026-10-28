@@ -141,6 +141,8 @@ It is **not installed by default**, because its security footprint is wider than
 
 Recommended use: install it, and use only the default channels that need no login (`github`, `youtube`, `web`, `v2ex`, `bilibili` search). Add login channels only with a throwaway account. Remove with "Uninstall Agent Reach" in a session, or `agent-reach` commands per its docs.
 
+Side effect to know about: `agent-reach setup` keeps one real copy of its skill in `~/.agents/skills/agent-reach` and also copies it into the skills folder of **every agent whose config folder it finds** (Claude Code, Cursor, Gemini CLI, GitHub Copilot, Windsurf, Codex and OpenCode). If you only use Claude Code, delete the extra copies afterwards.
+
 ```bash
 ./install.ps1 -WithAgentReach        # Windows
 bash install.sh --with-agent-reach   # macOS / Linux
@@ -162,7 +164,7 @@ Everything is user-level. Nothing is written inside a project.
 | npm global | `@playwright/cli` | Microsoft |
 | `~/design-references/awesome-design-md` | Brand library (git clone) | VoltAgent |
 | `~/.playwright` | Playwright workspace | Microsoft |
-| `~/.agent-reach`, `uv` tools | Only with the opt-in flag | Agent Reach |
+| `~/.local/bin` (`uv`), `~/.agent-reach`, `~/.agents/skills/agent-reach`, plus a skill copy in each detected agent | Only with the opt-in flag | Agent Reach |
 
 The skills CLI shows third-party security scores at install time. Review a skill before trusting it: skills run with your agent's permissions.
 
