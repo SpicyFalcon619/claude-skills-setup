@@ -9,12 +9,13 @@
   <img alt="Claude Code" src="https://img.shields.io/badge/for-Claude%20Code-d97757?style=flat-square">
 </p>
 
-A single, repeatable setup for the global Claude Code toolkit I use for front-end design and browser work.
+A single, repeatable setup for the global Claude Code toolkit I use for front-end design, engineering workflow and browser work.
 Run one script on any machine and every project gets the same skills, with no per-project configuration.
 
 - **Global, not per-project.** Everything lands in your user folder (`~/.claude`), so it is available in every session.
 - **Idempotent.** Re-running the script updates what is already installed.
-- **Verified sources.** Each tool is pulled from its upstream repository. Nothing here is vendored except one small wrapper skill.
+- **Opinionated about weight.** Heavy workflow tooling (Superpowers) is installed but **off by default**, and a small skill reminds you to switch it on when you start a real project.
+- **Verified sources.** Each tool is pulled from its upstream repository. Nothing here is vendored except two small skills.
 - **Opt-in extras.** Anything with a wider security footprint is behind an explicit flag.
 
 ## Contents
@@ -22,8 +23,10 @@ Run one script on any machine and every project gets the same skills, with no pe
 - [Quick start](#quick-start)
 - [What you get](#what-you-get)
 - [How the pieces work together](#how-the-pieces-work-together)
+- [Superpowers: on for real projects only](#superpowers-on-for-real-projects-only)
 - [Tool reference](#tool-reference)
 - [Optional: Agent Reach](#optional-agent-reach)
+- [Deliberately not included](#deliberately-not-included)
 - [What the installer changes on your machine](#what-the-installer-changes-on-your-machine)
 - [Update, verify and uninstall](#update-verify-and-uninstall)
 - [Repository layout](#repository-layout)
@@ -31,7 +34,7 @@ Run one script on any machine and every project gets the same skills, with no pe
 
 ## Quick start
 
-Prerequisites: **Node 22+**, **npm**, **git**, and an installed **Chrome, Edge or Chromium**.
+Prerequisites: **Node 22+**, **npm**, **git**, the **`claude` CLI** (Claude Code), and an installed **Chrome, Edge or Chromium**.
 
 ```bash
 gh repo clone SpicyFalcon619/claude-skills-setup
@@ -49,29 +52,69 @@ Then restart Claude Code and run `/impeccable init` once inside each project whe
 
 ## What you get
 
+**Design**
+
 | Tool | Type | One line |
 |---|---|---|
 | [Taste Skill v2](#taste-skill-v2) | Skill | Art direction for websites and app screens, checked in a real browser |
 | [Impeccable](#impeccable) | Skill, agents, hooks | Design commands for critique, polish, animation, typography and more |
 | [Web Design Guidelines](#web-design-guidelines) | Skill | UI code audit against 100+ accessibility and UX rules |
-| [Playwright CLI](#playwright-cli) | CLI and skill | Token-efficient browser automation, screenshots and test generation |
 | [Design References](#design-references) | Skill and library | Real design systems from 84 well-known brands |
+| [Anthropic skills](#anthropic-skills) | Skills | Official skills for themes, canvas art, brand styling, docs and comms |
+
+**Engineering**
+
+| Tool | Type | One line |
+|---|---|---|
+| [Superpowers](#superpowers-on-for-real-projects-only) | Plugin, off by default | Brainstorm, plan, test-first and verify workflow for real projects |
+| [Project Kickoff](#project-kickoff) | Skill (this repo) | Reminds you to turn Superpowers on when a real project starts |
+| [Matt Pocock Skills](#matt-pocock-skills) | Plugin | Small, composable skills: TDD, specs, tickets, code review, triage |
+| [Karpathy Skills](#karpathy-skills) | Plugin | Four guardrails against common LLM coding mistakes |
+| [Graphify](#graphify) | CLI and skill | Turns a codebase into a queryable knowledge graph |
+
+**Browser and web**
+
+| Tool | Type | One line |
+|---|---|---|
+| [Playwright CLI](#playwright-cli) | CLI and skill | Token-efficient browser automation, screenshots and test generation |
 | [Agent Reach](#optional-agent-reach) | CLI and skill, opt-in | Let the agent read web, video and social platforms |
 
 ## How the pieces work together
 
 ```mermaid
 flowchart LR
-    A[Brief or idea] --> B[Design References<br/>optional brand tokens]
-    A --> C[Taste Skill<br/>direction and build]
-    B --> C
+    A[Start a project] --> K[Project Kickoff<br/>offers Superpowers]
+    K --> S[Superpowers<br/>plan, test, verify]
+    A --> G[Graphify<br/>map existing code]
+    A --> B[Design References<br/>optional brand tokens]
+    B --> C[Taste Skill<br/>direction and build]
+    A --> C
     C --> D[Playwright CLI<br/>screenshots and checks]
     D --> E[Impeccable<br/>critique and polish]
-    E --> F[Web Design Guidelines<br/>accessibility and UX audit]
-    F --> G[Shipped UI]
+    E --> F[Web Design Guidelines<br/>accessibility audit]
+    F --> H[Shipped]
+    S --> H
 ```
 
-A typical flow: pick a direction with Taste Skill (or borrow tokens from a brand in Design References), let Playwright CLI look at the result in a real browser, refine with Impeccable commands such as `critique`, `polish` and `typeset`, then run Web Design Guidelines as the final audit.
+A typical flow: kick off a real project and turn Superpowers on for it, map an existing codebase with Graphify, pick a direction with Taste Skill (or borrow tokens from a brand in Design References), let Playwright CLI look at the result in a real browser, refine with Impeccable commands such as `critique`, `polish` and `typeset`, then run Web Design Guidelines as the final audit.
+
+## Superpowers: on for real projects only
+
+[Superpowers](https://github.com/obra/superpowers) enforces a disciplined workflow: brainstorm, write a plan, test first, verify before claiming done. That is excellent on a real project and slow overhead on a quick question or a one-off script. So this setup:
+
+1. Installs it as a plugin at user scope.
+2. **Disables it globally**, so it adds nothing to everyday sessions.
+3. Installs the [`project-kickoff`](#project-kickoff) skill, which notices when you are starting a real project and offers to enable Superpowers for that project only.
+
+Enabling is per project and reversible:
+
+```bash
+claude plugin enable  superpowers@claude-plugins-official --scope project   # on, shared via .claude/settings.json
+claude plugin enable  superpowers@claude-plugins-official --scope local     # on, private to this machine
+claude plugin disable superpowers@claude-plugins-official --scope project   # off again
+```
+
+Plugins load at session start, so restart Claude Code after enabling. Cost when enabled is about 850 tokens of always-on context plus a session-start hook. Re-running the installer turns it back off globally, which is intended.
 
 ## Tool reference
 
@@ -111,12 +154,6 @@ Reviews UI code against Vercel's Web Interface Guidelines: accessibility, focus 
 
 It fetches the current rule set from the `vercel-labs/web-interface-guidelines` repository each time it runs, so it needs network access.
 
-### Playwright CLI
-
-**Source:** [microsoft/playwright-cli](https://github.com/microsoft/playwright-cli)
-
-A command-line browser driver designed to cost fewer tokens than a browser MCP server. Gives the agent navigation, clicking and typing, screenshots, DOM snapshots, console and network inspection, cookie and storage control, video and tracing, device emulation and test generation. The installed skill teaches the agent the commands and ships references for sessions, request mocking, tracing and test generation.
-
 ### Design References
 
 **Source:** [VoltAgent/awesome-design-md](https://github.com/VoltAgent/awesome-design-md), plus a small wrapper skill in this repository ([`design-references/SKILL.md`](design-references/SKILL.md))
@@ -124,6 +161,46 @@ A command-line browser driver designed to cost fewer tokens than a browser MCP s
 A library of 84 `DESIGN.md` files extracted from well-known products, covering colour palettes, type scales, component styles and layout principles. Examples include Stripe, Linear, Vercel, Notion, Apple, Airbnb, Spotify and Supabase. The wrapper skill is what makes it automatic: say "make it feel like Linear" and the agent reads that brand's file before writing UI.
 
 Brand files are inspiration and structure. The skill instructs the agent not to copy logos, wordmarks or proprietary copy.
+
+### Anthropic skills
+
+**Source:** [anthropics/skills](https://github.com/anthropics/skills)
+
+Seven official skills: `algorithmic-art` (generative p5.js art), `brand-guidelines`, `canvas-design` (posters and static art), `doc-coauthoring` (structured document writing), `internal-comms`, `slack-gif-creator` and `theme-factory` (ten preset themes for artifacts, slides and pages).
+
+Only the skills that are not already bundled with Claude are installed, so there are no duplicates. See [Deliberately not included](#deliberately-not-included).
+
+### Project Kickoff
+
+**Source:** this repository ([`project-kickoff/SKILL.md`](project-kickoff/SKILL.md))
+
+Triggers when you begin substantial new work (a new app, service, library or repo, or a feature large enough to need a plan). It checks whether Superpowers is already on, asks once whether to enable it for this project, and runs the per-project enable command on a yes. It also mentions `/impeccable init` for UI projects and `/graphify .` for large existing codebases. It stays silent for quick questions, one-off scripts and small edits.
+
+### Matt Pocock Skills
+
+**Source:** [mattpocock/skills](https://github.com/mattpocock/skills), installed as the `mattpocock-skills` plugin (MIT)
+
+27 small, composable engineering skills, including `tdd`, `to-spec`, `to-tickets`, `triage`, `code-review`, `diagnosing-bugs`, `grill-me`, `grill-with-docs`, `domain-modeling`, `improve-codebase-architecture`, `handoff` and `wayfinder`. They are designed to be adapted rather than to own your process. Always-on context cost is about 1,650 tokens.
+
+### Karpathy Skills
+
+**Source:** [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills), installed as a plugin
+
+One skill, `karpathy-guidelines`, with four principles derived from Andrej Karpathy's notes on LLM coding pitfalls: think before coding, simplicity first, surgical changes, goal-driven execution. About 100 tokens of always-on context. The upstream repository has no license file, so it is installed from source and not copied into this repository.
+
+### Graphify
+
+**Source:** [Graphify-Labs/graphify](https://github.com/Graphify-Labs/graphify) (PyPI package `graphifyy`, Apache-2.0)
+
+Turns a codebase, with its docs, configs and schemas, into a queryable knowledge graph. Run `/graphify .` in a project; the output goes to `graphify-out/` in that project. Code extraction is local and parses ASTs without executing anything. Semantic extraction uses your model backend, so content from the files you point it at is processed by it.
+
+Note: `graphify install` appends a short registration block to your global `~/.claude/CLAUDE.md`. Your existing content is left untouched.
+
+### Playwright CLI
+
+**Source:** [microsoft/playwright-cli](https://github.com/microsoft/playwright-cli)
+
+A command-line browser driver designed to cost fewer tokens than a browser MCP server. Gives the agent navigation, clicking and typing, screenshots, DOM snapshots, console and network inspection, cookie and storage control, video and tracing, device emulation and test generation. The installed skill teaches the agent the commands and ships references for sessions, request mocking, tracing and test generation.
 
 ## Optional: Agent Reach
 
@@ -148,6 +225,19 @@ Side effect to know about: `agent-reach setup` keeps one real copy of its skill 
 bash install.sh --with-agent-reach   # macOS / Linux
 ```
 
+## Deliberately not included
+
+Chosen on purpose, so nobody wonders whether they were missed.
+
+| Skipped | Why |
+|---|---|
+| UI UX Pro Max | Overlaps Taste Skill and Impeccable, and its generic style catalogue works against a non-generic look |
+| Caveman | Terse output trades readability for tokens, and it ships a proxy |
+| Ponytail | A style preference, not needed |
+| Image to Code | Written for Codex and depends on an image-generation tool Claude Code does not have |
+| Anthropic `frontend-design`, `webapp-testing` | Overlap Taste Skill and Playwright CLI; two design skills compete for the same triggers |
+| Anthropic document skills, `mcp-builder`, `skill-creator`, `web-artifacts-builder`, `claude-api` | Already bundled with Claude |
+
 ## What the installer changes on your machine
 
 Everything is user-level. Nothing is written inside a project.
@@ -159,12 +249,18 @@ Everything is user-level. Nothing is written inside a project.
 | `~/.claude/skills/playwright-cli` | Skill | Microsoft |
 | `~/.claude/skills/impeccable` | Skill and engine binary | Impeccable |
 | `~/.claude/skills/design-references` | Wrapper skill | This repo |
+| `~/.claude/skills/project-kickoff` | Skill | This repo |
+| `~/.claude/skills/graphify` | Skill | Graphify |
+| `~/.claude/skills/{algorithmic-art, brand-guidelines, canvas-design, doc-coauthoring, internal-comms, slack-gif-creator, theme-factory}` | Seven skills | Anthropic |
+| Claude plugins (user scope) | `mattpocock-skills`, `andrej-karpathy-skills`, `superpowers` (disabled) | Pocock, Karpathy, Superpowers |
 | `~/.claude/agents/impeccable-*.md` | Four agents | Impeccable |
-| `~/.claude/settings.json` | Impeccable hooks added | Impeccable |
+| `~/.claude/settings.json` | Impeccable hooks, plugin and marketplace entries | Impeccable, Claude CLI |
+| `~/.claude/CLAUDE.md` | A short Graphify registration block appended | Graphify |
 | npm global | `@playwright/cli` | Microsoft |
+| `uv` tool | `graphify`, `graphify-mcp` (and `uv` itself if missing, in `~/.local/bin`) | Graphify |
 | `~/design-references/awesome-design-md` | Brand library (git clone) | VoltAgent |
 | `~/.playwright` | Playwright workspace | Microsoft |
-| `~/.local/bin` (`uv`), `~/.agent-reach`, `~/.agents/skills/agent-reach`, plus a skill copy in each detected agent | Only with the opt-in flag | Agent Reach |
+| `~/.agent-reach`, `~/.agents/skills/agent-reach`, plus a skill copy in each detected agent | Only with the opt-in flag | Agent Reach |
 
 The skills CLI shows third-party security scores at install time. Review a skill before trusting it: skills run with your agent's permissions.
 
@@ -175,8 +271,10 @@ The skills CLI shows third-party security scores at install time. Review a skill
 **Verify:**
 
 ```bash
-ls ~/.claude/skills          # five skills (plus agent-reach if opted in)
+ls ~/.claude/skills
+claude plugin list           # mattpocock-skills and karpathy enabled, superpowers disabled
 playwright-cli --version
+graphify --help
 ```
 
 Inside Claude Code, the skills appear in the available-skills list after a restart.
@@ -184,13 +282,17 @@ Inside Claude Code, the skills appear in the available-skills list after a resta
 **Uninstall:**
 
 ```bash
-rm -rf ~/.claude/skills/{design-taste-frontend,web-design-guidelines,playwright-cli,impeccable,design-references}
+rm -rf ~/.claude/skills/{design-taste-frontend,web-design-guidelines,playwright-cli,impeccable,design-references,project-kickoff,graphify,algorithmic-art,brand-guidelines,canvas-design,doc-coauthoring,internal-comms,slack-gif-creator,theme-factory}
 rm -f  ~/.claude/agents/impeccable-*.md
 rm -rf ~/design-references
 npm uninstall -g @playwright/cli
+uv tool uninstall graphifyy
+claude plugin uninstall mattpocock-skills@claude-plugins-official
+claude plugin uninstall andrej-karpathy-skills@karpathy-skills
+claude plugin uninstall superpowers@claude-plugins-official
 ```
 
-Then remove the `impeccable` entries from the `hooks` block in `~/.claude/settings.json`.
+Then remove the `impeccable` entries from the `hooks` block in `~/.claude/settings.json` and the `# graphify` block from `~/.claude/CLAUDE.md`.
 
 ## Repository layout
 
@@ -200,6 +302,8 @@ claude-skills-setup/
   install.sh                  macOS / Linux installer (bash)
   design-references/
     SKILL.md                  Wrapper skill over the brand library
+  project-kickoff/
+    SKILL.md                  Reminds you to enable Superpowers on real projects
   assets/
     banner.svg                README banner
   LICENSE
@@ -207,6 +311,6 @@ claude-skills-setup/
 
 ## Credits
 
-All the heavy lifting is upstream: [Taste Skill](https://github.com/Leonxlnx/taste-skill), [Impeccable](https://github.com/pbakaus/impeccable), [Vercel agent-skills](https://github.com/vercel-labs/agent-skills), [Playwright CLI](https://github.com/microsoft/playwright-cli), [awesome-design-md](https://github.com/VoltAgent/awesome-design-md) and [Agent Reach](https://github.com/Panniantong/Agent-Reach). This repository only wires them together.
+All the heavy lifting is upstream: [Taste Skill](https://github.com/Leonxlnx/taste-skill), [Impeccable](https://github.com/pbakaus/impeccable), [Vercel agent-skills](https://github.com/vercel-labs/agent-skills), [Playwright CLI](https://github.com/microsoft/playwright-cli), [awesome-design-md](https://github.com/VoltAgent/awesome-design-md), [Anthropic skills](https://github.com/anthropics/skills), [Superpowers](https://github.com/obra/superpowers), [Matt Pocock Skills](https://github.com/mattpocock/skills), [Karpathy Skills](https://github.com/multica-ai/andrej-karpathy-skills), [Graphify](https://github.com/Graphify-Labs/graphify) and [Agent Reach](https://github.com/Panniantong/Agent-Reach). This repository only wires them together.
 
 Released under the [MIT License](LICENSE).
