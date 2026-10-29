@@ -5,18 +5,13 @@
   Needs Node 22+, npm, git, the `claude` CLI, and Chrome/Edge/Chromium.
   Safe to re-run: it updates what is installed. Re-running turns Superpowers back off globally
   (it is meant to be enabled per project).
-.PARAMETER WithAgentReach
-  Also installs Agent Reach (opt-in). Read the Security section of the README first.
 .EXAMPLE
   ./install.ps1
-.EXAMPLE
-  ./install.ps1 -WithAgentReach
 #>
-param([switch]$WithAgentReach)
 
 $ErrorActionPreference = 'Stop'
 $here = $PSScriptRoot
-$total = if ($WithAgentReach) { 10 } else { 9 }
+$total = 9
 $script:step = 0
 
 function Step([string]$title) {
@@ -93,13 +88,6 @@ Step 'Project kickoff skill (reminds you to enable Superpowers on real projects)
 $kick = Join-Path $HOME '.claude/skills/project-kickoff'
 New-Item -ItemType Directory -Force $kick | Out-Null
 Copy-Item (Join-Path $here 'project-kickoff/SKILL.md') (Join-Path $kick 'SKILL.md') -Force
-
-if ($WithAgentReach) {
-  Step 'Agent Reach (OPT-IN: web, video and social reading)'
-  EnsureUv
-  Run { uv tool install --force https://github.com/Panniantong/Agent-Reach/releases/latest/download/agent-reach.zip }
-  Run { agent-reach setup }
-}
 
 Write-Host ""
 Write-Host 'Done. Installed skills:' -ForegroundColor Green

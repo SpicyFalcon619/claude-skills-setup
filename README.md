@@ -16,7 +16,7 @@ Run one script on any machine and every project gets the same skills, with no pe
 - **Idempotent.** Re-running the script updates what is already installed.
 - **Opinionated about weight.** Heavy workflow tooling (Superpowers) is installed but **off by default**, and a small skill reminds you to switch it on when you start a real project.
 - **Verified sources.** Each tool is pulled from its upstream repository. Nothing here is vendored except two small skills.
-- **Opt-in extras.** Anything with a wider security footprint is behind an explicit flag.
+- **Conservative on security.** Tools that copy browser logins or download stealth browsers are left out on purpose. See [Security notes](#security-notes) and [Deliberately not included](#deliberately-not-included).
 
 ## Contents
 
@@ -25,7 +25,7 @@ Run one script on any machine and every project gets the same skills, with no pe
 - [How the pieces work together](#how-the-pieces-work-together)
 - [Superpowers: on for real projects only](#superpowers-on-for-real-projects-only)
 - [Tool reference](#tool-reference)
-- [Optional: Agent Reach](#optional-agent-reach)
+- [Security notes](#security-notes)
 - [Deliberately not included](#deliberately-not-included)
 - [What the installer changes on your machine](#what-the-installer-changes-on-your-machine)
 - [Update, verify and uninstall](#update-verify-and-uninstall)
@@ -45,8 +45,6 @@ cd claude-skills-setup
 |---|---|
 | Windows (PowerShell) | `./install.ps1` |
 | macOS / Linux | `bash install.sh` |
-
-Add `-WithAgentReach` (PowerShell) or `--with-agent-reach` (bash) to include the optional extra described [below](#optional-agent-reach).
 
 Then restart Claude Code and run `/impeccable init` once inside each project where you want Impeccable's design context.
 
@@ -72,12 +70,11 @@ Then restart Claude Code and run `/impeccable init` once inside each project whe
 | [Karpathy Skills](#karpathy-skills) | Plugin | Four guardrails against common LLM coding mistakes |
 | [Graphify](#graphify) | CLI and skill | Turns a codebase into a queryable knowledge graph |
 
-**Browser and web**
+**Browser**
 
 | Tool | Type | One line |
 |---|---|---|
 | [Playwright CLI](#playwright-cli) | CLI and skill | Token-efficient browser automation, screenshots and test generation |
-| [Agent Reach](#optional-agent-reach) | CLI and skill, opt-in | Let the agent read web, video and social platforms |
 
 ## How the pieces work together
 
@@ -202,28 +199,23 @@ Note: `graphify install` appends a short registration block to your global `~/.c
 
 A command-line browser driver designed to cost fewer tokens than a browser MCP server. Gives the agent navigation, clicking and typing, screenshots, DOM snapshots, console and network inspection, cookie and storage control, video and tracing, device emulation and test generation. The installed skill teaches the agent the commands and ships references for sessions, request mocking, tracing and test generation.
 
-## Optional: Agent Reach
+## Security notes
 
-**Source:** [Panniantong/Agent-Reach](https://github.com/Panniantong/Agent-Reach) (MIT, actively maintained)
+Skills, plugins and hooks run with your user permissions. Nothing sandboxes them from your project `.env` files, `~/.ssh`, browser data or Claude's own history (`~/.claude/history.jsonl` and `~/.claude/projects`). The tools here were chosen and checked with that in mind, but it is worth knowing where the exposure is.
 
-Gives an agent a single CLI for reading platforms it cannot normally reach: GitHub, YouTube (including transcripts), Bilibili, V2EX and web pages by default, with optional Reddit, LinkedIn, X, Xiaohongshu, Xueqiu and others. It is read-only by design (it searches and reads, and does not post).
+| Exposure | Tool | What to know |
+|---|---|---|
+| Runs on every session and edit | Impeccable | Its hooks run an opaque compiled engine on session start, after every Edit or Write, and on stop, in all projects. Network use seen in the skill is localhost only. Remove the `impeccable` entries from `~/.claude/settings.json` to run it on demand instead. |
+| Fetches instructions at runtime | Web Design Guidelines | It downloads its rule set from a GitHub URL on each run and follows it. That is Vercel's repository, but it is a remote-instruction channel. |
+| Runs scripts and a browser | Taste Skill, Playwright CLI | Taste Skill only contacts public image archives. Never point Playwright CLI at your real logged-in browser profile, and treat pages it visits as untrusted. |
+| Reads project files | Graphify | It skips `.env`, key files, SSH keys and `.netrc`, but writes `graphify-out/` into the project, so do not commit that on private code. |
+| Text only | Pocock, Karpathy, Anthropic skills, Superpowers, the two skills in this repo | No code that touches your data. Superpowers has a session-start hook and is disabled by default. |
 
-It is **not installed by default**, because its security footprint is wider than the rest of this toolkit:
+Plugins and `npx -y` pull upstream changes without a review, so a trusted repository being compromised later is the main supply-chain risk. Practical steps:
 
-- It installs a chain of third-party tools: `uv`, a stealth Chromium build (CloakBrowser), OpenCLI with a Chrome extension, `yt-dlp` and per-platform CLIs.
-- For login-gated platforms it can copy a site's login cookies from your Chrome into its own dedicated browser. If you use those channels, use a secondary account.
-- Several channels exist to get past platforms' anti-automation defences, which can breach those platforms' terms and get accounts restricted.
-- It feeds untrusted web content (posts, comments, pages) to your agent, which is a prompt-injection surface.
-- The PyPI package named `agent-reach` is a different project. This repository installs it from the official GitHub release only.
-
-Recommended use: install it, and use only the default channels that need no login (`github`, `youtube`, `web`, `v2ex`, `bilibili` search). Add login channels only with a throwaway account. Remove with "Uninstall Agent Reach" in a session, or `agent-reach` commands per its docs.
-
-Side effect to know about: `agent-reach setup` keeps one real copy of its skill in `~/.agents/skills/agent-reach` and also copies it into the skills folder of **every agent whose config folder it finds** (Claude Code, Cursor, Gemini CLI, GitHub Copilot, Windsurf, Codex and OpenCode). If you only use Claude Code, delete the extra copies afterwards.
-
-```bash
-./install.ps1 -WithAgentReach        # Windows
-bash install.sh --with-agent-reach   # macOS / Linux
-```
+- Add `permissions.deny` rules in `~/.claude/settings.json` for `.env`, `~/.ssh`, `~/.aws`, `~/.claude/projects` and `history.jsonl`. These restrict Claude's own tools, not scripts a skill launches. For real isolation use Claude Code's sandbox setting or a separate user, container or VM.
+- Keep real secrets out of project folders, and rotate any key that has sat in an `.env`.
+- Turn off plugin auto-update if you want to review changes first.
 
 ## Deliberately not included
 
@@ -234,6 +226,7 @@ Chosen on purpose, so nobody wonders whether they were missed.
 | UI UX Pro Max | Overlaps Taste Skill and Impeccable, and its generic style catalogue works against a non-generic look |
 | Caveman | Terse output trades readability for tokens, and it ships a proxy |
 | Ponytail | A style preference, not needed |
+| Agent Reach | Installs a stealth browser and several third-party tools, can copy login cookies from your Chrome, and copies its skill into every other agent it finds. Installed, reviewed, then removed |
 | Image to Code | Written for Codex and depends on an image-generation tool Claude Code does not have |
 | Anthropic `frontend-design`, `webapp-testing` | Overlap Taste Skill and Playwright CLI; two design skills compete for the same triggers |
 | Anthropic document skills, `mcp-builder`, `skill-creator`, `web-artifacts-builder`, `claude-api` | Already bundled with Claude |
@@ -260,7 +253,6 @@ Everything is user-level. Nothing is written inside a project.
 | `uv` tool | `graphify`, `graphify-mcp` (and `uv` itself if missing, in `~/.local/bin`) | Graphify |
 | `~/design-references/awesome-design-md` | Brand library (git clone) | VoltAgent |
 | `~/.playwright` | Playwright workspace | Microsoft |
-| `~/.agent-reach`, `~/.agents/skills/agent-reach`, plus a skill copy in each detected agent | Only with the opt-in flag | Agent Reach |
 
 The skills CLI shows third-party security scores at install time. Review a skill before trusting it: skills run with your agent's permissions.
 
@@ -311,6 +303,6 @@ claude-skills-setup/
 
 ## Credits
 
-All the heavy lifting is upstream: [Taste Skill](https://github.com/Leonxlnx/taste-skill), [Impeccable](https://github.com/pbakaus/impeccable), [Vercel agent-skills](https://github.com/vercel-labs/agent-skills), [Playwright CLI](https://github.com/microsoft/playwright-cli), [awesome-design-md](https://github.com/VoltAgent/awesome-design-md), [Anthropic skills](https://github.com/anthropics/skills), [Superpowers](https://github.com/obra/superpowers), [Matt Pocock Skills](https://github.com/mattpocock/skills), [Karpathy Skills](https://github.com/multica-ai/andrej-karpathy-skills), [Graphify](https://github.com/Graphify-Labs/graphify) and [Agent Reach](https://github.com/Panniantong/Agent-Reach). This repository only wires them together.
+All the heavy lifting is upstream: [Taste Skill](https://github.com/Leonxlnx/taste-skill), [Impeccable](https://github.com/pbakaus/impeccable), [Vercel agent-skills](https://github.com/vercel-labs/agent-skills), [Playwright CLI](https://github.com/microsoft/playwright-cli), [awesome-design-md](https://github.com/VoltAgent/awesome-design-md), [Anthropic skills](https://github.com/anthropics/skills), [Superpowers](https://github.com/obra/superpowers), [Matt Pocock Skills](https://github.com/mattpocock/skills), [Karpathy Skills](https://github.com/multica-ai/andrej-karpathy-skills) and [Graphify](https://github.com/Graphify-Labs/graphify). This repository only wires them together.
 
 Released under the [MIT License](LICENSE).
