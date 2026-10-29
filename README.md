@@ -211,11 +211,27 @@ Skills, plugins and hooks run with your user permissions. Nothing sandboxes them
 | Reads project files | Graphify | It skips `.env`, key files, SSH keys and `.netrc`, but writes `graphify-out/` into the project, so do not commit that on private code. |
 | Text only | Pocock, Karpathy, Anthropic skills, Superpowers, the two skills in this repo | No code that touches your data. Superpowers has a session-start hook and is disabled by default. |
 
-Plugins and `npx -y` pull upstream changes without a review, so a trusted repository being compromised later is the main supply-chain risk. Practical steps:
+Plugins and `npx -y` pull upstream changes without a review, so a trusted repository being compromised later is the main supply-chain risk.
 
-- Add `permissions.deny` rules in `~/.claude/settings.json` for `.env`, `~/.ssh`, `~/.aws`, `~/.claude/projects` and `history.jsonl`. These restrict Claude's own tools, not scripts a skill launches. For real isolation use Claude Code's sandbox setting or a separate user, container or VM.
+### Hardening snippet (optional, not applied automatically)
+
+[`security/settings.snippet.json`](security/settings.snippet.json) holds the protections I run, so you can merge them into your own `~/.claude/settings.json`:
+
+- **Deny rules** that stop Claude's file tools reading or editing `.env` files and their variants (anywhere on disk), `~/.ssh`, `~/.aws`, `~/.gnupg`, `.npmrc`, `.netrc`, `.pypirc`, `*.pem`, `*.key`, SSH keys, and Claude's own transcripts (`*.jsonl`) and `history.jsonl`. `.env.example` stays readable. Claude's memory folder is deliberately not blocked.
+- **Sandbox** for shell commands, with the same credential paths denied to them. `failIfUnavailable` is `false`, so a machine that cannot start the sandbox degrades to a warning, and `autoAllowBashIfSandboxed` is `false`, so prompting is unchanged.
+
+Notes on how it behaves:
+
+- The `//**/` rule form matches anywhere on disk. The plain `**/` form only matches inside the current project, which is why both are included.
+- Deny rules restrict Claude's own tools. They do not stop a script that a skill launches, which is what the sandbox is for.
+- The sandbox can break tools that need broad file or network access (`git push`, `gh`, `npm`, Playwright). If that happens, delete the `"sandbox"` block.
+- Merge by hand into the `permissions` and `sandbox` keys. The installers never touch these settings.
+
+Other steps worth doing:
+
 - Keep real secrets out of project folders, and rotate any key that has sat in an `.env`.
 - Turn off plugin auto-update if you want to review changes first.
+- Impeccable's hooks are optional. Remove the `impeccable` entries from the `hooks` block to run it on demand only.
 
 ## Deliberately not included
 
@@ -296,6 +312,8 @@ claude-skills-setup/
     SKILL.md                  Wrapper skill over the brand library
   project-kickoff/
     SKILL.md                  Reminds you to enable Superpowers on real projects
+  security/
+    settings.snippet.json     Optional deny rules and sandbox settings to merge by hand
   assets/
     banner.svg                README banner
   LICENSE
