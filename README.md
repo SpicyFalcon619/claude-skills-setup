@@ -55,6 +55,7 @@ Then restart Claude Code and run `/impeccable init` once inside each project whe
 | Tool | Type | One line |
 |---|---|---|
 | [Taste Skill v2](#taste-skill-v2) | Skill | Art direction for websites and app screens, checked in a real browser |
+| [Anatomy](#anatomy) | Skill | Interactive isometric illustrations that explain an idea as a real machine |
 | [Impeccable](#impeccable) | Skill, agents, hooks | Design commands for critique, polish, animation, typography and more |
 | [Web Design Guidelines](#web-design-guidelines) | Skill | UI code audit against 100+ accessibility and UX rules |
 | [Design References](#design-references) | Skill and library | Real design systems from 84 well-known brands |
@@ -87,13 +88,15 @@ flowchart LR
     B --> C[Taste Skill<br/>direction and build]
     A --> C
     C --> D[Playwright CLI<br/>screenshots and checks]
+    A --> N[Anatomy<br/>isometric figures for docs and pages]
+    N --> D
     D --> E[Impeccable<br/>critique and polish]
     E --> F[Web Design Guidelines<br/>accessibility audit]
     F --> H[Shipped]
     S --> H
 ```
 
-A typical flow: kick off a real project and turn Superpowers on for it, map an existing codebase with Graphify, pick a direction with Taste Skill (or borrow tokens from a brand in Design References), let Playwright CLI look at the result in a real browser, refine with Impeccable commands such as `critique`, `polish` and `typeset`, then run Web Design Guidelines as the final audit.
+A typical flow: kick off a real project and turn Superpowers on for it, map an existing codebase with Graphify, pick a direction with Taste Skill (or borrow tokens from a brand in Design References), draw an explanatory figure with Anatomy where a page needs one, let Playwright CLI look at the result in a real browser, refine with Impeccable commands such as `critique`, `polish` and `typeset`, then run Web Design Guidelines as the final audit.
 
 ## Superpowers: on for real projects only
 
@@ -125,6 +128,17 @@ An anti-generic front-end skill. Instead of the usual centred headline over thre
 - Ships scripts (draw, inspect, lint, assets) that run on Node 22+ and a local Chrome, Edge or Chromium.
 - Finds real, credited images from open archives (Wikimedia, museums, NASA, Internet Archive) and needs no API keys.
 - **Does not** replace a component library, and it only activates on web UI work.
+
+### Anatomy
+
+**Source:** [wheresryan22/anatomy](https://github.com/wheresryan22/anatomy) (MIT). Code reviewed at commit `1482e84` (18 Oct 2026) before it was added.
+
+Builds detailed, interactive isometric illustrations that explain a technical idea as a real physical object: a test rig, a dial gauge, a cabinet of drawers, a lock. Output is framework-free SVG (TypeScript or JavaScript) or React and Next.js components, with optional WebGL shaders for fire, water and lamp light, and A4 or Letter PDF prints of any figure.
+
+- Triggers on requests for an isometric illustration, or an explanatory diagram or figure for docs, a blog post, a landing page or an article.
+- Ships eight worked examples, a drawing kit, geometry audits and Node scripts. It is about 12 MB, and needs Node 20.10+ and a local Chrome, Edge or Chromium for its checks.
+- Publishing to its community gallery happens only when you ask (`publish.mjs --submit`). It uses your `gh` login and prints its plan first.
+- **Does not** replace a chart or data-visualisation library; it draws crafted objects, not data plots.
 
 ### Impeccable
 
@@ -207,6 +221,7 @@ Skills, plugins and hooks run with your user permissions. Nothing sandboxes them
 |---|---|---|
 | Runs on every session and edit | Impeccable | Its hooks run an opaque compiled engine on session start, after every Edit or Write, and on stop, in all projects. Network use seen in the skill is localhost only. Remove the `impeccable` entries from `~/.claude/settings.json` to run it on demand instead. |
 | Fetches instructions at runtime | Web Design Guidelines | It downloads its rule set from a GitHub URL on each run and follows it. That is Vercel's repository, but it is a remote-instruction channel. |
+| Launches a headless browser | Anatomy | Its scripts start Chrome with a throwaway profile and `--allow-file-access-from-files`, and `drive.mjs` runs JavaScript it is given inside the page, so point them only at your own pages. In the reviewed code the only network address is localhost. `git` and `gh` run only on `publish.mjs --submit`, which prints its plan first, and that command also reads this session's log to estimate time and tokens. |
 | Runs scripts and a browser | Taste Skill, Playwright CLI | Taste Skill only contacts public image archives. Never point Playwright CLI at your real logged-in browser profile, and treat pages it visits as untrusted. |
 | Reads project files | Graphify | It skips `.env`, key files, SSH keys and `.netrc`, but writes `graphify-out/` into the project, so do not commit that on private code. |
 | Text only | Pocock, Karpathy, Anthropic skills, Superpowers, the two skills in this repo | No code that touches your data. Superpowers has a session-start hook and is disabled by default. |
@@ -254,6 +269,7 @@ Everything is user-level. Nothing is written inside a project.
 | Location | What | Source |
 |---|---|---|
 | `~/.claude/skills/design-taste-frontend` | Skill | Taste Skill |
+| `~/.claude/skills/anatomy` | Skill with kit, scripts and examples | Anatomy |
 | `~/.claude/skills/web-design-guidelines` | Skill | Vercel |
 | `~/.claude/skills/playwright-cli` | Skill | Microsoft |
 | `~/.claude/skills/impeccable` | Skill and engine binary | Impeccable |
@@ -290,7 +306,7 @@ Inside Claude Code, the skills appear in the available-skills list after a resta
 **Uninstall:**
 
 ```bash
-rm -rf ~/.claude/skills/{design-taste-frontend,web-design-guidelines,playwright-cli,impeccable,design-references,project-kickoff,graphify,algorithmic-art,brand-guidelines,canvas-design,doc-coauthoring,internal-comms,slack-gif-creator,theme-factory}
+rm -rf ~/.claude/skills/{design-taste-frontend,anatomy,web-design-guidelines,playwright-cli,impeccable,design-references,project-kickoff,graphify,algorithmic-art,brand-guidelines,canvas-design,doc-coauthoring,internal-comms,slack-gif-creator,theme-factory}
 rm -f  ~/.claude/agents/impeccable-*.md
 rm -rf ~/design-references
 npm uninstall -g @playwright/cli
@@ -321,6 +337,6 @@ claude-skills-setup/
 
 ## Credits
 
-All the heavy lifting is upstream: [Taste Skill](https://github.com/Leonxlnx/taste-skill), [Impeccable](https://github.com/pbakaus/impeccable), [Vercel agent-skills](https://github.com/vercel-labs/agent-skills), [Playwright CLI](https://github.com/microsoft/playwright-cli), [awesome-design-md](https://github.com/VoltAgent/awesome-design-md), [Anthropic skills](https://github.com/anthropics/skills), [Superpowers](https://github.com/obra/superpowers), [Matt Pocock Skills](https://github.com/mattpocock/skills), [Karpathy Skills](https://github.com/multica-ai/andrej-karpathy-skills) and [Graphify](https://github.com/Graphify-Labs/graphify). This repository only wires them together.
+All the heavy lifting is upstream: [Taste Skill](https://github.com/Leonxlnx/taste-skill), [Anatomy](https://github.com/wheresryan22/anatomy), [Impeccable](https://github.com/pbakaus/impeccable), [Vercel agent-skills](https://github.com/vercel-labs/agent-skills), [Playwright CLI](https://github.com/microsoft/playwright-cli), [awesome-design-md](https://github.com/VoltAgent/awesome-design-md), [Anthropic skills](https://github.com/anthropics/skills), [Superpowers](https://github.com/obra/superpowers), [Matt Pocock Skills](https://github.com/mattpocock/skills), [Karpathy Skills](https://github.com/multica-ai/andrej-karpathy-skills) and [Graphify](https://github.com/Graphify-Labs/graphify). This repository only wires them together.
 
 Released under the [MIT License](LICENSE).

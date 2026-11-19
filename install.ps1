@@ -11,7 +11,7 @@
 
 $ErrorActionPreference = 'Stop'
 $here = $PSScriptRoot
-$total = 9
+$total = 10
 $script:step = 0
 
 function Step([string]$title) {
@@ -46,6 +46,9 @@ Set-Location ~
 
 Step 'Taste Skill v2 (design-taste-frontend)'
 Run { npx -y skills add https://github.com/Leonxlnx/taste-skill --skill design-taste-frontend -g -a claude-code -y }
+
+Step 'Anatomy (isometric illustrations of machines and systems)'
+Run { npx -y skills add https://github.com/wheresryan22/anatomy -g -a claude-code -y }
 
 Step 'Web Design Guidelines'
 Run { npx -y skills add https://github.com/vercel-labs/agent-skills --skill web-design-guidelines -g -a claude-code -y }

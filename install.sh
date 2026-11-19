@@ -17,7 +17,7 @@ done
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STEP=0
-TOTAL=9
+TOTAL=10
 
 step() { STEP=$((STEP + 1)); printf '\n[%d/%d] %s\n' "$STEP" "$TOTAL" "$1"; }
 die()  { printf 'error: %s\n' "$1" >&2; exit 1; }
@@ -43,6 +43,9 @@ cd ~
 
 step "Taste Skill v2 (design-taste-frontend)"
 npx -y skills add https://github.com/Leonxlnx/taste-skill --skill design-taste-frontend -g -a claude-code -y
+
+step "Anatomy (isometric illustrations of machines and systems)"
+npx -y skills add https://github.com/wheresryan22/anatomy -g -a claude-code -y
 
 step "Web Design Guidelines"
 npx -y skills add https://github.com/vercel-labs/agent-skills --skill web-design-guidelines -g -a claude-code -y
